@@ -15,8 +15,8 @@ from langchain_core.prompts import ChatPromptTemplate
 # ---------- PAGE ----------
 st.set_page_config(page_title="RAG Chatbot", layout="wide")
 #st.title("📄 AI Document Chatbot (Latest LangChain)")
-st.title("Your Reading Assistant")
-st.text("Created by S Ashish Reddy")
+st.title("Your AI Reading Assistant")
+st.title("Created by S Ashish Reddy")
 
 # ---------- API KEY ----------
 if "OPENAI_API_KEY" not in os.environ:
