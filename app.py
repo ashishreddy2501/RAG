@@ -5,26 +5,25 @@ import os
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from langchain.chains import RetrievalQA
-from langchain.prompts import PromptTemplate
 
-# ---------- PAGE CONFIG ----------
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+
+from langchain.chains import create_retrieval_chain
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain_core.prompts import ChatPromptTemplate
+
+# ---------- PAGE ----------
 st.set_page_config(page_title="RAG Chatbot", layout="wide")
-st.title("📄 AI Document Chatbot (RAG)")
+st.title("📄 AI Document Chatbot (Latest LangChain)")
 
 # ---------- API KEY ----------
 if "OPENAI_API_KEY" not in os.environ:
-    st.warning("Enter your OpenAI API Key")
-    os.environ["OPENAI_API_KEY"] = st.text_input("API Key", type="password")
+    os.environ["OPENAI_API_KEY"] = st.text_input("Enter OpenAI API Key", type="password")
 
 # ---------- CACHE ----------
 @st.cache_resource
 def load_llm():
-    return ChatOpenAI(
-        model="gpt-4o-mini",
-        temperature=0
-    )
+    return ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
 @st.cache_resource
 def load_embeddings():
@@ -40,9 +39,10 @@ if uploaded_file:
         tmp.write(uploaded_file.read())
         pdf_path = tmp.name
 
-    # Load + split
+    # Load PDF
     docs = PyPDFLoader(pdf_path).load()
 
+    # Split
     chunks = RecursiveCharacterTextSplitter(
         chunk_size=500,
         chunk_overlap=100
@@ -51,38 +51,34 @@ if uploaded_file:
     # Vector DB
     db = FAISS.from_documents(chunks, load_embeddings())
 
-    # Prompt (important for accuracy)
-    prompt_template = """
-    You are an AI assistant.
+    retriever = db.as_retriever(search_kwargs={"k": 4})
+
+    # ---------- PROMPT ----------
+    prompt = ChatPromptTemplate.from_template("""
+    You are a helpful AI assistant.
 
     Answer ONLY from the context below.
-    If the answer is not in the context, say:
+    If the answer is not present, say:
     "I don't know based on the document."
 
     Context:
     {context}
 
     Question:
-    {question}
+    {input}
 
-    Give a clear and detailed answer.
-    """
+    Provide a clear and detailed answer.
+    """)
 
-    PROMPT = PromptTemplate(
-        template=prompt_template,
-        input_variables=["context", "question"]
-    )
+    # ---------- CHAINS ----------
+    llm = load_llm()
 
-    # RAG chain
-    qa = RetrievalQA.from_chain_type(
-        llm=load_llm(),
-        retriever=db.as_retriever(search_kwargs={"k": 4}),
-        chain_type_kwargs={"prompt": PROMPT}
-    )
+    document_chain = create_stuff_documents_chain(llm, prompt)
+    rag_chain = create_retrieval_chain(retriever, document_chain)
 
     st.success("✅ Document ready!")
 
-    # Chat UI
+    # ---------- CHAT ----------
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
@@ -92,12 +88,12 @@ if uploaded_file:
         st.session_state.messages.append({"role": "user", "content": query})
 
         with st.spinner("Thinking..."):
-            response = qa.invoke({"query": query})
-            answer = response["result"]
+            response = rag_chain.invoke({"input": query})
+            answer = response["answer"]
 
         st.session_state.messages.append({"role": "assistant", "content": answer})
 
-    # Display chat
+    # Display messages
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.write(msg["content"])
