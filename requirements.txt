@@ -5,3 +5,4 @@ langchain-openai
 faiss-cpu
 pypdf
 tiktoken
+langchain-text-splitters
