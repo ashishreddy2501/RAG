@@ -15,9 +15,9 @@ from langchain_core.prompts import ChatPromptTemplate
 # ---------- PAGE ----------
 st.set_page_config(page_title="RAG Chatbot", layout="wide")
 #st.title("📄 AI Document Chatbot (Latest LangChain)")
-st.title("Your AI Reading Assistant- RAG Model using Open AI APIs")
+st.title("AI Document Chatbot using OpenAI LLMs (RAG System)")
 st.title("Created by S Ashish Reddy")
-st.text("An AI assistant to answer questions by retrieving relevant information from uploaded document in pdf format")
+st.text("AI-powered document chatbot that answers questions by retrieving relevant information from uploaded PDF files using Retrieval-Augmented Generation (RAG)")
 
 # ---------- API KEY ----------
 if "OPENAI_API_KEY" not in os.environ:
@@ -33,7 +33,7 @@ def load_embeddings():
     return OpenAIEmbeddings()
 
 # ---------- FILE UPLOAD ----------
-uploaded_file = st.file_uploader("Upload PDF", type="pdf")
+uploaded_file = st.file_uploader("Please Upload your PDF below", type="pdf")
 
 if uploaded_file:
 
