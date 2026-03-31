@@ -33,7 +33,7 @@ def load_embeddings():
     return OpenAIEmbeddings()
 
 # ---------- FILE UPLOAD ----------
-uploaded_file = st.file_uploader("Please Upload your PDF below", type="pdf")
+uploaded_file = st.file_uploader("Please Upload your PDF", type="pdf")
 
 if uploaded_file:
 
